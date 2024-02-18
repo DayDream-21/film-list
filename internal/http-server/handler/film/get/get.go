@@ -3,6 +3,7 @@ package get
 import (
 	"film-list/internal/dto"
 	"html/template"
+	"log/slog"
 	"net/http"
 )
 
@@ -16,6 +17,10 @@ func New(filmGetter FilmGetter) http.HandlerFunc {
 
 		filmSlice, err := filmGetter.GetFilms()
 		if err != nil {
+			slog.Error("failed to get films:", err)
+
+			http.Error(w, "failed to get films", http.StatusInternalServerError)
+
 			return
 		}
 
@@ -25,6 +30,13 @@ func New(filmGetter FilmGetter) http.HandlerFunc {
 
 		tmpl := template.Must(template.ParseFiles("index.html"))
 
-		tmpl.Execute(w, films)
+		err = tmpl.Execute(w, films)
+		if err != nil {
+			slog.Error("failed to execute template:", err)
+
+			http.Error(w, "failed to execute template", http.StatusInternalServerError)
+
+			return
+		}
 	}
 }

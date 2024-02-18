@@ -22,14 +22,14 @@ func New(filmSaver FilmSaver) http.HandlerFunc {
 		director := r.PostFormValue("director")
 
 		if title == "" || director == "" {
-			slog.Warn("title or director is missing in the request")
+			slog.Error("title or director is missing in the request")
 
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "title or director is missing in the request", http.StatusBadRequest)
 
 			return
 		}
 
-		slog.Info("Received post data:", "title", title, "director", director)
+		slog.Info("received post data:", "title", title, "director", director)
 
 		newFilm := dto.Film{
 			Title:    title,
@@ -38,13 +38,31 @@ func New(filmSaver FilmSaver) http.HandlerFunc {
 
 		idHex, err := filmSaver.SaveFilm(newFilm)
 		if err != nil {
+			slog.Error("failed to save film:", "error", err)
+
+			http.Error(w, "failed to save film", http.StatusInternalServerError)
+
 			return
 		}
 
 		tmpl := template.Must(template.ParseFiles("index.html"))
 
-		newFilm.ID, _ = primitive.ObjectIDFromHex(idHex)
+		newFilm.ID, err = primitive.ObjectIDFromHex(idHex)
+		if err != nil {
+			slog.Error("failed to convert id to ObjectID:", "error", err)
 
-		tmpl.ExecuteTemplate(w, "film-list-element", newFilm)
+			http.Error(w, "failed to convert id to ObjectID", http.StatusInternalServerError)
+
+			return
+		}
+
+		err = tmpl.ExecuteTemplate(w, "film-list-element", newFilm)
+		if err != nil {
+			slog.Error("failed to execute template:", "error", err)
+
+			http.Error(w, "failed to execute template", http.StatusInternalServerError)
+
+			return
+		}
 	}
 }

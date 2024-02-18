@@ -13,12 +13,22 @@ func New(filmDeleter FilmDeleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		if id == "" {
-			slog.Warn("id is missing in the request")
+			slog.Error("id is missing in the request")
+
+			http.Error(w, "id is missing in the request", http.StatusBadRequest)
+
 			return
 		}
 
-		slog.Info("Received delete data:", "id", id)
+		slog.Info("received delete data:", "id", id)
 
-		filmDeleter.DeleteFilm(id)
+		_, err := filmDeleter.DeleteFilm(id)
+		if err != nil {
+			slog.Error("failed to delete film:", "error", err)
+
+			http.Error(w, "failed to delete film", http.StatusInternalServerError)
+
+			return
+		}
 	}
 }

@@ -1,4 +1,4 @@
-package myMongo
+package mongo
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func New() (*Storage, error) {
 
 	client, err := mongo.Connect(mongoConnectionCtx, options.Client().ApplyURI("mongodb://root:example@localhost:27017"))
 	if err != nil {
-		slog.Error("Failed to connect to MongoDB", err)
+		slog.Error("failed to connect to MongoDB", err)
 	}
 
 	err = client.Ping(mongoConnectionCtx, nil)
@@ -31,7 +31,7 @@ func New() (*Storage, error) {
 		log.Fatal(err)
 	}
 
-	slog.Info("Connected to MongoDB!")
+	slog.Info("connected to MongoDB!")
 
 	return &Storage{client: client}, nil
 }
@@ -46,15 +46,23 @@ func (s *Storage) GetFilms() ([]dto.Film, error) {
 
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
-		slog.Error("Failed to find films", err)
+		slog.Error("failed to find films", err)
+
+		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		err := cursor.Close(ctx)
+		if err != nil {
+			slog.Error("failed to close cursor", err)
+		}
+	}()
 
 	for cursor.Next(ctx) {
 		var film dto.Film
 		err := cursor.Decode(&film)
 		if err != nil {
-			slog.Error("Failed to decode film", err)
+			slog.Error("failed to decode film", err)
+			// TODO: Вернуть + обработать ошибку
 		}
 		filmsSlice = append(filmsSlice, film)
 	}
@@ -70,12 +78,16 @@ func (s *Storage) SaveFilm(film dto.Film) (string, error) {
 
 	result, err := collection.InsertOne(ctx, film)
 	if err != nil {
-		slog.Error("Failed to insert film", err)
+		slog.Error("failed to insert film", err)
+
+		return "", err
 	}
 
 	oid, ok := result.InsertedID.(primitive.ObjectID)
 	if !ok {
-		return "", errors.New("Failed to convert inserted ID to ObjectID")
+		slog.Error("failed to convert inserted ID to ObjectID")
+
+		return "", errors.New("failed to convert inserted ID to ObjectID")
 	}
 
 	return oid.Hex(), nil
@@ -89,19 +101,25 @@ func (s *Storage) DeleteFilm(id string) (int64, error) {
 
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		slog.Error("Failed to convert id to ObjectID:", "error", err)
+		slog.Error("failed to convert id to ObjectID:", "error", err)
+
+		return 0, err
 	}
 
 	result, err := collection.DeleteOne(ctx, bson.M{"_id": objectId})
 	if err != nil {
-		slog.Error("Failed to delete film:", "id", objectId, "error", err)
+		slog.Error("failed to delete film:", "id", objectId, "error", err)
+
+		return 0, err
 	}
 
 	if result.DeletedCount == 0 {
-		slog.Warn("No films were deleted:", "id", objectId)
+		slog.Warn("no films were deleted:", "id", objectId)
+
+		return 0, nil
 	}
 
-	slog.Info("Deleted film successfully:", "id", objectId)
+	slog.Info("deleted film successfully:", "id", objectId)
 
 	return result.DeletedCount, nil
 }
