@@ -2,8 +2,8 @@ package get
 
 import (
 	"film-list/internal/dto"
+	"github.com/charmbracelet/log"
 	"html/template"
-	"log/slog"
 	"net/http"
 )
 
@@ -11,13 +11,13 @@ type FilmGetter interface {
 	GetFilms() ([]dto.Film, error)
 }
 
-func New(filmGetter FilmGetter) http.HandlerFunc {
+func New(filmGetter FilmGetter, log *log.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var filmSlice []dto.Film
 
 		filmSlice, err := filmGetter.GetFilms()
 		if err != nil {
-			slog.Error("failed to get films:", err)
+			log.Error("failed to get films:", err)
 
 			http.Error(w, "failed to get films", http.StatusInternalServerError)
 
@@ -32,7 +32,7 @@ func New(filmGetter FilmGetter) http.HandlerFunc {
 
 		err = tmpl.Execute(w, films)
 		if err != nil {
-			slog.Error("failed to execute template:", err)
+			log.Error("failed to execute template:", err)
 
 			http.Error(w, "failed to execute template", http.StatusInternalServerError)
 

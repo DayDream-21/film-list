@@ -2,9 +2,9 @@ package save
 
 import (
 	"film-list/internal/dto"
+	"github.com/charmbracelet/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"html/template"
-	"log/slog"
 	"net/http"
 	"time"
 )
@@ -13,7 +13,7 @@ type FilmSaver interface {
 	SaveFilm(film dto.Film) (string, error)
 }
 
-func New(filmSaver FilmSaver) http.HandlerFunc {
+func New(filmSaver FilmSaver, log *log.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Just to see beautiful spinner
 		time.Sleep(300 * time.Millisecond)
@@ -22,14 +22,14 @@ func New(filmSaver FilmSaver) http.HandlerFunc {
 		director := r.PostFormValue("director")
 
 		if title == "" || director == "" {
-			slog.Error("title or director is missing in the request")
+			log.Error("title or director is missing in the request")
 
 			http.Error(w, "title or director is missing in the request", http.StatusBadRequest)
 
 			return
 		}
 
-		slog.Info("received post data:", "title", title, "director", director)
+		log.Info("received post data:", "title", title, "director", director)
 
 		newFilm := dto.Film{
 			Title:    title,
@@ -38,7 +38,7 @@ func New(filmSaver FilmSaver) http.HandlerFunc {
 
 		idHex, err := filmSaver.SaveFilm(newFilm)
 		if err != nil {
-			slog.Error("failed to save film:", "error", err)
+			log.Error("failed to save film:", "error", err)
 
 			http.Error(w, "failed to save film", http.StatusInternalServerError)
 
@@ -49,7 +49,7 @@ func New(filmSaver FilmSaver) http.HandlerFunc {
 
 		newFilm.ID, err = primitive.ObjectIDFromHex(idHex)
 		if err != nil {
-			slog.Error("failed to convert id to ObjectID:", "error", err)
+			log.Error("failed to convert id to ObjectID:", "error", err)
 
 			http.Error(w, "failed to convert id to ObjectID", http.StatusInternalServerError)
 
@@ -58,7 +58,7 @@ func New(filmSaver FilmSaver) http.HandlerFunc {
 
 		err = tmpl.ExecuteTemplate(w, "film-list-element", newFilm)
 		if err != nil {
-			slog.Error("failed to execute template:", "error", err)
+			log.Error("failed to execute template:", "error", err)
 
 			http.Error(w, "failed to execute template", http.StatusInternalServerError)
 
