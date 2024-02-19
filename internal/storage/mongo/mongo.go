@@ -44,18 +44,19 @@ func (s *Storage) GetFilms() ([]dto.Film, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// TODO: вынести имя БД и коллекцию в конфиг
 	collection := s.client.Database("film-list").Collection("films")
 
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
-		s.log.Error("failed to find films", err)
+		s.log.Error("failed to find films:", "error", err)
 
 		return nil, err
 	}
 	defer func() {
 		err := cursor.Close(ctx)
 		if err != nil {
-			s.log.Error("failed to close cursor", err)
+			s.log.Error("failed to close cursor:", "error", err)
 		}
 	}()
 
@@ -63,7 +64,7 @@ func (s *Storage) GetFilms() ([]dto.Film, error) {
 		var film dto.Film
 		err := cursor.Decode(&film)
 		if err != nil {
-			s.log.Error("failed to decode film", err)
+			s.log.Error("failed to decode film:", "error", err)
 
 			return nil, err
 		}
@@ -74,23 +75,27 @@ func (s *Storage) GetFilms() ([]dto.Film, error) {
 }
 
 func (s *Storage) SaveFilm(film dto.Film) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 0*time.Second)
 	defer cancel()
 
 	collection := s.client.Database("film-list").Collection("films")
 
 	result, err := collection.InsertOne(ctx, film)
 	if err != nil {
-		s.log.Error("failed to insert film", err)
+		s.log.Error("failed to insert film:", "error", err)
 
 		return "", err
 	}
 
+	s.log.Info("saved film successfully:", "id", result.InsertedID)
+
 	oid, ok := result.InsertedID.(primitive.ObjectID)
 	if !ok {
-		s.log.Error("failed to convert inserted ID to ObjectID")
+		err := errors.New("failed to convert inserted ID to ObjectID")
 
-		return "", errors.New("failed to convert inserted ID to ObjectID")
+		s.log.Error("failed to convert inserted ID to ObjectID:", "error", err)
+
+		return "", err
 	}
 
 	return oid.Hex(), nil

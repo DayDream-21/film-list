@@ -17,7 +17,7 @@ func New() *log.Logger {
 	const Red = "#dc3545"
 
 	options := log.Options{
-		ReportCaller:    false,
+		ReportCaller:    true,
 		ReportTimestamp: true,
 		TimeFormat:      time.DateTime,
 	}
