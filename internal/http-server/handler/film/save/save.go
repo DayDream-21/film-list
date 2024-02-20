@@ -2,9 +2,9 @@ package save
 
 import (
 	"film-list/internal/dto"
-	"github.com/charmbracelet/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -13,7 +13,7 @@ type FilmSaver interface {
 	SaveFilm(film dto.Film) (string, error)
 }
 
-func New(filmSaver FilmSaver, log *log.Logger) http.HandlerFunc {
+func New(filmSaver FilmSaver, log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Just to see beautiful spinner
 		time.Sleep(300 * time.Millisecond)

@@ -10,11 +10,12 @@ import (
 	"net/http"
 )
 
-// TODO: добавить красивое логирование
 // TODO: выложить на github
 func main() {
-	log := logger.New()
+	log := charmLogger.New()
 
+	// TODO: парсить конфигурацию из файла, на основе конфигурации выбирать тип логгирования и ту БД и к которой мы подключаемся.
+	//  Сделать два режима продакшен и разработки. В проде мы подключаемся к удаленной БД, а в разработке к локальной
 	// TODO: добавить реализацию на PostgreSQL (может разбить на разные storage, типо sqlStorage и nosqlStorage?)
 	storage, err := mongo.New(log)
 	if err != nil {
@@ -25,5 +26,8 @@ func main() {
 	http.HandleFunc("POST /add-film", save.New(storage, log))
 	http.HandleFunc("DELETE /film", dbDelete.New(storage, log))
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	err = http.ListenAndServe(":8080", nil)
+	if err != nil {
+		slog.Error("failed to start server:", err)
+	}
 }

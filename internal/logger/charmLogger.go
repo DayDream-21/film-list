@@ -1,14 +1,14 @@
-package logger
+package charmLogger
 
 import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"log/slog"
 	"os"
 	"time"
 )
 
-// TODO: возвращать slog, чтобы не зависить от конкретной реализации стороннего логгера
-func New() *log.Logger {
+func New() *slog.Logger {
 	const MaxWidth = 7
 	const Black = "#000000"
 	const White = "#ffffff"
@@ -52,5 +52,7 @@ func New() *log.Logger {
 
 	logger.SetStyles(styles)
 
-	return logger
+	slogLogger := slog.New(logger)
+
+	return slogLogger
 }

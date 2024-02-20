@@ -4,20 +4,20 @@ import (
 	"context"
 	"errors"
 	"film-list/internal/dto"
-	"github.com/charmbracelet/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"log/slog"
 	"time"
 )
 
 type Storage struct {
 	client *mongo.Client
-	log    *log.Logger
+	log    *slog.Logger
 }
 
-func New(log *log.Logger) (*Storage, error) {
+func New(log *slog.Logger) (*Storage, error) {
 	mongoConnectionCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -75,7 +75,7 @@ func (s *Storage) GetFilms() ([]dto.Film, error) {
 }
 
 func (s *Storage) SaveFilm(film dto.Film) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 0*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	collection := s.client.Database("film-list").Collection("films")

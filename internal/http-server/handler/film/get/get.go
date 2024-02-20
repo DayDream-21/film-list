@@ -2,8 +2,8 @@ package get
 
 import (
 	"film-list/internal/dto"
-	"github.com/charmbracelet/log"
 	"html/template"
+	"log/slog"
 	"net/http"
 )
 
@@ -11,7 +11,7 @@ type FilmGetter interface {
 	GetFilms() ([]dto.Film, error)
 }
 
-func New(filmGetter FilmGetter, log *log.Logger) http.HandlerFunc {
+func New(filmGetter FilmGetter, log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var filmSlice []dto.Film
 

@@ -1,7 +1,7 @@
 package delete
 
 import (
-	"github.com/charmbracelet/log"
+	"log/slog"
 	"net/http"
 )
 
@@ -9,7 +9,7 @@ type FilmDeleter interface {
 	DeleteFilm(id string) (int64, error)
 }
 
-func New(filmDeleter FilmDeleter, log *log.Logger) http.HandlerFunc {
+func New(filmDeleter FilmDeleter, log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		if id == "" {
